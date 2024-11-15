@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "kstring.h": "c"
+  },
+  "cSpell.words": ["kscanf"]
+}

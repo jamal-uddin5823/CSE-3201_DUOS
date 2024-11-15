@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "kstring.h": "c",
+    "sys_bus_matrix.h": "c"
+  }
+}

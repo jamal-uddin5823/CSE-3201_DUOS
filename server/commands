@@ -1,0 +1,1 @@
+arm-none-eabi-objcopy -O binary duos24/src/compile/target/duos server/output.bin
