@@ -39,6 +39,7 @@
 #include <system_config.h>
 #include <UsartRingBuffer.h>
 #include <flash.h>
+#include <stdbool.h>
 #ifndef DEBUG
 #define DEBUG 1
 // #define VERSION_ADDR ((volatile uint8_t *)0x2000FFFCU)
@@ -51,8 +52,8 @@
 #define DATA_SIZE               1024
 
 typedef struct {
-    uint32_t crc;
-    uint8_t data[DATA_SIZE];
+    uint8_t* crc;
+    uint8_t* data;
 } PACKET;
 
 #define PACKET_SIZE             sizeof(PACKET)
@@ -128,11 +129,84 @@ int ceiling_divide(int num, int divisor) {
 }
 
 
+static void write_init(void) {
+  flash_lock();                                                            
+  flash_unlock();
+  flash_erase_sector(SECTOR_NUMBER, 0x02);
+}
+
+static uint32_t bits32_from_4_bytes(uint8_t *bytes){
+  uint32_t sum = 0; 
+  uint32_t power = 1 << 8; 
+  for(uint8_t i = 0; i < 4; i++){
+    sum *= power; 
+    sum += bytes[i];
+  }
+  return sum; 
+}
+
+static void packet_from_bytes(uint8_t* data_bytes, PACKET* packet, uint32_t data_length) {
+  
+  for(uint8_t i = 0; i < 4; i++) {
+    packet->crc[i] = packet->crc[i]<<8 | data_bytes[i];
+  }
+
+  
+  for(uint8_t i = 0 ; i < data_length ; i ++) {
+    // i + 2 because cmd takes 1 byte, and length takes 1 byte
+    packet->data[i] = data_bytes[i + 4];
+  }
+
+
+  // no idea why
+  uint32_t crc = bits32_from_4_bytes(packet->crc);
+}
+
+
+static void receive_packet(struct Packet* packet,uint32_t length) {
+  uint8_t data[PACKET_SIZE];
+  for(uint8_t i = 0; i < length; i++) {
+    data[i] = UART_READ(__CONSOLE);
+  }
+  Uart_flush(__CONSOLE);
+  packet_from_bytes(data, packet,length-4);
+}
+
+
+static void write(PACKET* packet, uint32_t chunk_index) {
+  uint32_t current_target_address = MAIN_APP_START_ADDRESS + chunk_index * DATA_SIZE;
+
+  // uint8_t data = 101;
+  // flash_program_byte(TARGET_ADDRESS, data);
+
+  // uint8_t arr[] = {10, 12};
+  // flash_program_byte(TARGET_ADDRESS, arr[0]);
+  // flash_program_byte(TARGET_ADDRESS + 4, arr[1]);
+  // flash_program(TARGET_ADDRESS, arr, 2);
+  for(uint32_t i = 0; i < DATA_SIZE; i += 4) {
+    uint32_t data_to_write = 0, power = (1 << 8);
+    for(int j = 3; j >= 0; j--) {
+      data_to_write = (data_to_write * power) + (uint32_t) packet->data[i + j];
+    }
+    
+    // debug("Chunk Index");
+    // debug(convertu32(i, 10));
+    // debug("data to write:");
+    // debug(convertu32(data_to_write, 10));
+    flash_program_4_bytes(current_target_address + i, data_to_write,i);
+  }
+  sleep(1);
+  kprintf("Packet written to flash\n");
+  sleep(1);
+}
+
+
 
 
 void kmain(void)
 {
     __sys_init();
+    write_init();
     // sleep(1);
     // test_flash();
 
@@ -140,9 +214,16 @@ void kmain(void)
     char buff[100];
     int file_size;
     int iteration;
-    char data[2048];
+    uint8_t data[1024];
+    uint8_t crc[4];
     int last_packet_size;
     uint32_t current_address = 0x08010000;
+
+    PACKET packet = {
+        .crc = crc,
+        .data = data
+    };
+
 
 
 
@@ -171,19 +252,25 @@ void kmain(void)
         // erase_os_memory_in_flash();
        
         for (int i = 0; i < iteration; i++) {
+            
             // kscanf("%d",&packet->crc);
             // sleep(1);
             // kprintf("CRC %d\n", packet->crc);
             // sleep(1);
+            sleep(1);
             if(i < iteration-1)
-                read_str(data, DATA_SIZE);
+                receive_packet(&packet, PACKET_SIZE);
                 
             else 
-                read_str(data,last_packet_size);
-            
+                receive_packet(&packet, last_packet_size + 4);
+            sleep(5);
+            kprintf("Packet received\n");
             sleep(1);
-            flash_program(current_address, data, (i < iteration-1) ? 1024 : last_packet_size,i);
-            current_address += 1024;
+            write(&packet, i);
+            sleep(1);
+            // flash_program(current_address, data, (i < iteration-1) ? 1024 : last_packet_size,i);
+            // current_address += 1024;
+
 
             // uint8_t status = flash_write(data, (i < iteration-1) ? 1024 : last_packet_size, current_address);
             // if(status == 1) {
@@ -206,7 +293,7 @@ void kmain(void)
             
             sleep(1);
             kprintf("ACK %d", i);
-            sleep(1);
+            sleep(5);
         }
         
         

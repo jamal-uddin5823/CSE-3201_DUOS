@@ -28,7 +28,7 @@ extern "C" {
     void flash_lock(void);
     void flash_wait_for_last_operation(void);
     void flash_program_byte(uint32_t address, uint8_t data);
-    void flash_program_4_bytes(uint32_t address, uint32_t data);
+    void flash_program_4_bytes(uint32_t address, uint32_t data,uint32_t iteration);
     void flash_program(uint32_t address, const uint8_t *data, uint32_t len, int iteration);
     void flash_erase_sector(uint8_t sector, uint32_t program_size);
 

@@ -32,7 +32,8 @@ class Packet:
     def to_bytes(self) -> bytes:
         crc32_bytes = self.crc32.to_bytes(4, byteorder='big')
         data_bytes = bytearray(PACKET_DATA_MAX_LENGTH)
-        data_bytes[:len(self.data)] = self.data
+        for i in range(min(len(self.data), PACKET_DATA_MAX_LENGTH)):
+            data_bytes[i] = self.data[i]
 
         packet_bytes = crc32_bytes + bytes(data_bytes)
         print(f"Packet bytes: {packet_bytes.hex()}")
@@ -100,13 +101,16 @@ class BootloaderTerminal:
     
 
     def send_and_receive(self,data):
-        print("Data size in bytes: ",len(data))
+        crc32 = self.calculate_crc32(data)
+        packet = Packet(crc32,data).to_bytes()
+        
+        print("Data size in bytes: ",len(packet))
         # crc32 = self.calculate_crc32(data)
         # header = f"{len(data):06b}:{crc32:08X}"
         # packet = header.encode() + data
         # packet = Packet(self.calculate_crc32(data),data).to_bytes()
 
-        self.serial.write(data)
+        self.serial.write(packet)
         # self.serial.write(packet)
         # print(f"Sent packet: {data.hex()}")  # Print hex format
         while True:

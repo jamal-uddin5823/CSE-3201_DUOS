@@ -44,7 +44,7 @@ extern "C" {
 
 
 
-
+uint8_t UART_READ(UART_HandleTypeDef *uart);
 
 /* reads the data in the rx_buffer and increment the tail count in rx_buffer of the given UART */
 int Uart_read(UART_HandleTypeDef *uart);

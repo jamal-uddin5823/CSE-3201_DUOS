@@ -40,7 +40,7 @@ void flash_unlock(void)
     return;
   }
 //sleep(1);
-//   kprintf("flash should be unlocked now.\n");
+  kprintf("flash should be unlocked now.\n");
   //sleep(1);
 }
 
@@ -71,7 +71,7 @@ void flash_wait_for_last_operation(void)
   while(FLASH->SR & FLASH_SR_BSY == FLASH_SR_BSY) {
   }
   //sleep(1);
-//   kprintf("flash is now free to work\n");
+  // kprintf("flash is now free to work\n");
   //sleep(1);
 }
 
@@ -98,9 +98,11 @@ void flash_program_byte(uint32_t address, uint8_t data)
   //sleep(1);
 }
 
-void flash_program_4_bytes(uint32_t address, uint32_t data)
+void flash_program_4_bytes(uint32_t address, uint32_t data,uint32_t iteration)
 {
-  kprintf("flashing a byte to address %d.\n", address);
+  sleep(1);
+  kprintf("flashing byte %d to address %x.\n",iteration, address);
+  sleep(1);
 
 	flash_wait_for_last_operation();
 	flash_set_program_size(0);
@@ -115,7 +117,17 @@ void flash_program_4_bytes(uint32_t address, uint32_t data)
 
 	FLASH->CR &= ~FLASH_CR_PG;		/* Disable the PG bit. */
 
-  kprintf("hopefully a byte is flashed.\n");
+  uint32_t read_data = (* (volatile uint32_t*) address);
+
+
+
+  sleep(1);
+  if(read_data == data) {
+    kprintf("Byte is flashed.\n");
+  } else {
+    kprintf("Error: Expected %x, Read: %x.\n",data, read_data);
+  }
+  sleep(1);
 }
 
 void flash_program(uint32_t address, const uint8_t *data, uint32_t len, int iteration)
