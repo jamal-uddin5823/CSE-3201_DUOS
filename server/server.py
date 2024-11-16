@@ -36,7 +36,7 @@ class Packet:
             data_bytes[i] = self.data[i]
 
         packet_bytes = crc32_bytes + bytes(data_bytes)
-        print(f"Packet bytes: {packet_bytes.hex()}")
+        # print(f"Packet bytes: {packet_bytes.hex()}")
         return packet_bytes
     
 

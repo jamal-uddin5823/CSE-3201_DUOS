@@ -100,7 +100,7 @@ void jump_to_main(void){
         uint32_t *reset_vector= (uint32_t *)(*reset_vector_entry);
 
         void_fn jump_fn= (void_fn)reset_vector;
-        sleep(1);
+        sleep(10);
         kprintf("Jumping to main application\n");
         sleep(1);
         SCB->VTOR = BOOTLOADER_SIZE;
@@ -175,29 +175,16 @@ static void receive_packet(struct Packet* packet,uint32_t length) {
 
 static void write(PACKET* packet, uint32_t chunk_index) {
   uint32_t current_target_address = MAIN_APP_START_ADDRESS + chunk_index * DATA_SIZE;
-
-  // uint8_t data = 101;
-  // flash_program_byte(TARGET_ADDRESS, data);
-
-  // uint8_t arr[] = {10, 12};
-  // flash_program_byte(TARGET_ADDRESS, arr[0]);
-  // flash_program_byte(TARGET_ADDRESS + 4, arr[1]);
-  // flash_program(TARGET_ADDRESS, arr, 2);
   for(uint32_t i = 0; i < DATA_SIZE; i += 4) {
     uint32_t data_to_write = 0, power = (1 << 8);
     for(int j = 3; j >= 0; j--) {
       data_to_write = (data_to_write * power) + (uint32_t) packet->data[i + j];
     }
     
-    // debug("Chunk Index");
-    // debug(convertu32(i, 10));
-    // debug("data to write:");
-    // debug(convertu32(data_to_write, 10));
     flash_program_4_bytes(current_target_address + i, data_to_write,i);
   }
   sleep(1);
   kprintf("Packet written to flash\n");
-  sleep(1);
 }
 
 
@@ -245,7 +232,7 @@ void kmain(void)
         } else {
             last_packet_size = DATA_SIZE;
         }
-        kprintf("File size: %d, Iteration %d\n", file_size,iteration);
+        kprintf("File size: %d, Iteration %d, Last pack %d byes\n", file_size,iteration,last_packet_size);
         sleep(1);
         // kprintf("Iteration: %d\n", iteration);
         // sleep(1);
@@ -258,42 +245,19 @@ void kmain(void)
             // kprintf("CRC %d\n", packet->crc);
             // sleep(1);
             sleep(1);
-            if(i < iteration-1)
-                receive_packet(&packet, PACKET_SIZE);
-                
-            else 
-                receive_packet(&packet, last_packet_size + 4);
+            receive_packet(&packet, PACKET_SIZE);
+            
             sleep(5);
-            kprintf("Packet received\n");
-            sleep(1);
+            // kprintf("Packet received\n");
+            // sleep(1);
             write(&packet, i);
             sleep(1);
-            // flash_program(current_address, data, (i < iteration-1) ? 1024 : last_packet_size,i);
-            // current_address += 1024;
-
-
-            // uint8_t status = flash_write(data, (i < iteration-1) ? 1024 : last_packet_size, current_address);
-            // if(status == 1) {
-            //     sleep(1);
-            //     kprintf("WRITE ERROR %d", i);
-            // } else {
-            //     status = flash_verify(data, (i < iteration-1) ? 1024 : last_packet_size, current_address);
-            //     if (status == 1) {
-            //         sleep(1);
-            //         kprintf("VERIFY ERROR %d", i);
-            //     } else {
-            //         current_address += 1024; // Move to next chunk address
-            //         // sleep(1);
-            //         kprintf("ACK %d", i);
-            //         sleep(1);
-            //     }
-            // }
+    
             
             // sleep(1);
-            
-            sleep(1);
             kprintf("ACK %d", i);
             sleep(5);
+            Uart_flush(__CONSOLE); 
         }
         
         
@@ -301,7 +265,8 @@ void kmain(void)
         kprintf("NO_UPDATE_NEEDED\n");
         sleep(1);
     }
-    
+    flash_lock();
+    sleep(5);
     jump_to_main();
     while (1)
     {
