@@ -161,6 +161,8 @@ void Reset_Handler(void){
 	_text_size = (uint32_t)&_etext - (uint32_t)&_stext;
 	_data_size = (uint32_t)&_edata - (uint32_t)&_sdata;
 	_bss_size = (uint32_t)&_ebss - (uint32_t)&_sbss;
+	__sys_init();
+	kprintf("Booting Machine Intelligence System 1.0 .....\r\n");
 	kmain();
 }
 void Default_Handler(void){

@@ -16,9 +16,9 @@ uint32_t flash_read_register(uint32_t* address) {
 
 void flash_unlock(void)
 {
-    //sleep(1);
+    //ms_delay(100);
   kprintf("flash unlock process started\n");
-    //sleep(1);
+    //ms_delay(100);
   if ((FLASH->CR & FLASH_CR_LOCK) != 0) {  // Check if flash is locked
     /* Authorize the FPEC access. */
     // int32_t data = flash_read_register(FLASH_KEYR);
@@ -34,14 +34,14 @@ void flash_unlock(void)
   }
 
   if ((FLASH->CR & FLASH_CR_LOCK) != 0) {  // Check if flash is locked
-    //sleep(1);
+    //ms_delay(100);
     kprintf("Sad. Did not get unlocked.\n");
-    //sleep(1);
+    //ms_delay(100);
     return;
   }
-//sleep(1);
+//ms_delay(100);
   kprintf("flash should be unlocked now.\n");
-  //sleep(1);
+  //ms_delay(100);
 }
 
 
@@ -55,9 +55,9 @@ static inline void flash_set_program_size(uint32_t psize)
 {
 	FLASH->CR &= ~(FLASH_CR_PG_Msk << FLASH_CR_PROGRAM_SHIFT);
 	FLASH->CR |= psize << FLASH_CR_PROGRAM_SHIFT;
-    //sleep(1);
+    //ms_delay(100);
     // kprintf("flash program size set.\n");
-    //sleep(1);
+    //ms_delay(100);
 }
 
 
@@ -65,21 +65,21 @@ void flash_wait_for_last_operation(void)
 {
   // while ((MMIO8(FLASH_SR) & FLASH_SR_BSY) != 0);
 	// while ((MMIO32(FLASH_SR) & FLASH_SR_BSY) == FLASH_SR_BSY);
-    //sleep(1);
+    //ms_delay(100);
 //   kprintf("checking if flash is busy.\n");
-  //sleep(1);
+  //ms_delay(100);
   while(FLASH->SR & FLASH_SR_BSY == FLASH_SR_BSY) {
   }
-  //sleep(1);
+  //ms_delay(100);
   // kprintf("flash is now free to work\n");
-  //sleep(1);
+  //ms_delay(100);
 }
 
 void flash_program_byte(uint32_t address, uint8_t data)
 {
-    //sleep(1);
+    //ms_delay(100);
 //   kprintf("flashing a byte to address %d.\n", address);
-//sleep(1);
+//ms_delay(100);
 
 	flash_wait_for_last_operation();
 	flash_set_program_size(0);
@@ -93,16 +93,16 @@ void flash_program_byte(uint32_t address, uint8_t data)
 	flash_wait_for_last_operation();
 
 	FLASH->CR &= ~FLASH_CR_PG;		/* Disable the PG bit. */
-//sleep(1);
+//ms_delay(100);
 //   kprintf("hopefully a byte is flashed.\n");
-  //sleep(1);
+  //ms_delay(100);
 }
 
 void flash_program_4_bytes(uint32_t address, uint32_t data,uint32_t iteration)
 {
-  // sleep(1);
+  // ms_delay(100);
   // kprintf("flashing byte %d to address %x.\n",iteration, address);
-  // sleep(1);
+  // ms_delay(100);
 
 	flash_wait_for_last_operation();
 	flash_set_program_size(0);
@@ -122,13 +122,13 @@ void flash_program_4_bytes(uint32_t address, uint32_t data,uint32_t iteration)
 
 
   if(read_data == data) {
-    // sleep(1);
+    // ms_delay(100);
     // kprintf("Byte %d is flashed to %x.\n",iteration, address);
   } else {
-    sleep(1);
+    ms_delay(100);
     kprintf("Error: Expected %x, Read: %x.\n",data, read_data);
   }
-  // sleep(1);
+  // ms_delay(100);
 }
 
 void flash_program(uint32_t address, const uint8_t *data, uint32_t len, int iteration)
@@ -139,14 +139,14 @@ void flash_program(uint32_t address, const uint8_t *data, uint32_t len, int iter
 	uint32_t i;
 	for (i = 0; i < len; i++) {
 		flash_program_byte(address+i, data[i]);
-        // //sleep(1);
+        // //ms_delay(100);
         // kprintf("Written %d out of %d bytes\n",i,len);
-        // //sleep(1);
+        // //ms_delay(100);
 	}
-    // sleep(1);
+    // ms_delay(100);
     // kprintf("ACK %d",iteration);
     kprintf("Written packet %d to flash\n",iteration);
-    // sleep(1);
+    // ms_delay(100);
 }
 
 void flash_erase_sector(uint8_t sector, uint32_t program_size)

@@ -36,6 +36,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <sys_bus_matrix.h>
+#include <kstdio.h>
 
 
 

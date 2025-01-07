@@ -9,7 +9,9 @@ import math
 
 BOOTLOADER_SIZE=0x10000 #64kb
 
-PACKET_DATA_MAX_LENGTH = 1024
+PACKET_DATA_MAX_LENGTH = 128
+MAX_RETRIES = 3
+retry_count = 0
 
 def read_version():
     try:
@@ -47,8 +49,9 @@ class BootloaderTerminal:
             self.current_version = read_version()  # Should be stored/managed better
             self.kernel_binary = "output.bin"
             self.data_size = PACKET_DATA_MAX_LENGTH
-            self.packet_size = 6+8+self.data_size
+            self.packet_size = 4+self.data_size
             self.max_retries = 3
+            self.retry_count = 0
             print(f"Connected to {port} at {baudrate} baud")
         except serial.SerialException as e:
             print(f"Error opening serial port: {e}")
@@ -58,7 +61,20 @@ class BootloaderTerminal:
             raise SystemExit
 
     def calculate_crc32(self, data: bytes) -> int:
-        return zlib.crc32(data) & 0xFFFFFFFF
+        crc = 0xFFFFFFFF
+        polynomial = 0x04C11DB7
+
+        for byte in data:
+            crc ^= byte << 24
+            for _ in range(8):
+                if crc & 0x80000000:
+                    crc = (crc << 1) ^ polynomial
+                    
+                else:
+                    crc <<= 1
+                crc &= 0xFFFFFFFF  # Ensure CRC remains within 32-bit bounds
+
+        return crc ^ 0xFFFFFFFF
 
     def send(self, data: bytes) -> bool:
         print(f"Sending: {data}")
@@ -103,15 +119,16 @@ class BootloaderTerminal:
     def send_and_receive(self,data):
         crc32 = self.calculate_crc32(data)
         packet = Packet(crc32,data).to_bytes()
+        print(f"CRC32: {crc32:08X}")
         
         print("Data size in bytes: ",len(packet))
         # crc32 = self.calculate_crc32(data)
         # header = f"{len(data):06b}:{crc32:08X}"
         # packet = header.encode() + data
         # packet = Packet(self.calculate_crc32(data),data).to_bytes()
-
+        assert len(data) == 128, f"Packet length is {len(data)} bytes"
+        # self.serial.write(data)
         self.serial.write(packet)
-        # self.serial.write(packet)
         # print(f"Sent packet: {data.hex()}")  # Print hex format
         while True:
             if self.serial.in_waiting:
@@ -119,18 +136,21 @@ class BootloaderTerminal:
                 # print(f"Received response length: {len(response)}")
                 # print(f"Raw received bytes: {response.encode().hex()}")
                 print(f"Decoded response: {response}")
-                if not response.startswith("ACK"):
+                if not response.startswith("ACK") and not response.startswith("NACK"):
+                    self.serial.write(packet)
                     continue
                 return response
             time.sleep(0.1)
 
 
-    def send_firmware_packet(self, data,iter) -> bool:
+    def send_firmware_packet(self, data,iter) -> str:
         recv = self.send_and_receive(data)
         print(f"ACK: {recv}")
         if recv == f"ACK {iter}":
-            return True
-        return False
+            return 'ACK'
+        elif recv == f"NACK {iter}":
+            return 'NACK'  
+        return 'ERR'
 
     def run(self):
         # print("Terminal started. Waiting for bootloader...")
@@ -146,9 +166,7 @@ class BootloaderTerminal:
 
                     
                     if message.startswith("VERSION_REQ:"):
-                        bootloader_version = message.split(":")[1]
                         print(f"Current version: {self.current_version}")
-                        print(f"Bootloader version: {bootloader_version}")
                         
                         self.send(f"{self.current_version}".encode())
                         continue
@@ -170,12 +188,26 @@ class BootloaderTerminal:
                         i=0
                         while(i<iteration):
                             print(f"Sending firmware packet {i+1}/{iteration}")
+                            print(f"Sending {i*self.data_size} to {(i+1)*self.data_size-1} bytes")
+                            packet_data = firmware_data[i*self.data_size:(i+1)*self.data_size]
+                            print(f"Packet data: {packet_data.hex()}")
+                            print(f"Packet data length: {len(packet_data)}")
                             res = self.send_firmware_packet(firmware_data[i*self.data_size:(i+1)*self.data_size],i)
-                            if not res:
-                                print("Firmware update failed")
-                                break
-                            i+=1
-                        print("Firmware update successful")
+                            # if res=='ERR':
+                            #     print("Firmware update failed")
+                            #     break
+                            if res=='NACK':
+                                print("Retrying...")
+                                self.retry_count+=1
+                                if self.retry_count==self.max_retries:
+                                    print("Max retries reached. Firmware update failed")
+                                    break
+                                continue
+                            elif res=='ACK':
+                                self.retry_count=0
+                                i+=1
+                        if i==iteration:
+                            print("Firmware update successful")
                         continue
 
                 time.sleep(0.1)

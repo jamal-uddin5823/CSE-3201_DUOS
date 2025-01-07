@@ -1,7 +1,7 @@
 ENTRY(Reset_Handler)
 MEMORY
 {
-	FLASH(RX): ORIGIN = 0x08010000, LENGTH = 448K
+	FLASH(RX): ORIGIN = 0x08010000, LENGTH = 440k
 	SRAM(RWX): ORIGIN = 0x20000000, LENGTH = 128K /* combined both SRAM1 and SRAM2 */
 }
 /* Sections placement in the memory */

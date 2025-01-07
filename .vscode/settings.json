@@ -1,6 +1,8 @@
 {
   "files.associations": {
     "kstring.h": "c",
-    "sys_bus_matrix.h": "c"
+    "sys_bus_matrix.h": "c",
+    "stm32_startup.h": "c",
+    "kstdio.h": "c"
   }
 }

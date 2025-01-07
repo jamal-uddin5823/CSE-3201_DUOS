@@ -37,12 +37,12 @@ extern "C" {
 #include <stm32f446xx.h>
 
 #ifndef   __COMPILER_BARRIER
-  #define __COMPILER_BARRIER()                  __asm volatile("":::"memory")
+  #define __COMPILER_BARRIER()                  asm volatile("":::"memory")
 #endif
-#define __DSB()        __asm volatile("dsb 0xf":::"memory")
-#define __ISB()        __asm volatile("isb 0xf":::"memory")
-#define __DMB()        __asm volatile("dmb 0xf":::"memory") 
-#define __NOP()        __asm volatile("nop":::"memory")
+#define __DSB()        asm volatile("dsb 0xf":::"memory")
+#define __ISB()        asm volatile("isb 0xf":::"memory")
+#define __DMB()        asm volatile("dmb 0xf":::"memory") 
+#define __NOP()        asm volatile("nop":::"memory")
 #define __NVIC_PRIO_BITS          4U
 #define __WFI()         asm volatile("wfi")
 /*
