@@ -55,6 +55,7 @@ mcu_info.o \
 kfloat.o \
 sys_clock.o \
 sys_usart.o \
+usart.o \
 sys_gpio.o \
 sys_timer.o \
 kmain.o \
@@ -73,6 +74,7 @@ debug.o \
 sys_spi.o \
 sys_err.o \
 sys_rtc.o \
+dev_table.o \
 duos \
 final.elf
 
@@ -103,6 +105,9 @@ sys_gpio.o: $(OS_SYS_LIB)/sys_gpio.c
 	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
 	
 sys_usart.o: $(OS_SYS_LIB)/sys_usart.c
+	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
+
+usart.o: $(OS_SYS_LIB)/usart.c
 	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
 	
 sys_timer.o: $(OS_SYS_LIB)/sys_timer.c
@@ -156,6 +161,9 @@ sys_err.o: $(OS_SYS_LIB)/sys_err.c
 sys_rtc.o: $(OS_SYS_LIB)/sys_rtc.c
 	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
 
+dev_table.o: $(OS_PATH)/dev/lib/dev_table.c
+	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
+
 test_can.o: $(USERLAND)/utils/test_can.c
 	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
 
@@ -168,6 +176,7 @@ duos: $(OBJECT)/kmath.o \
 	$(OBJECT)/stm32_startup.o \
 	$(OBJECT)/sys_clock.o \
 	$(OBJECT)/sys_usart.o \
+	$(OBJECT)/usart.o \
 	$(OBJECT)/sys_gpio.o \
 	$(OBJECT)/kstdio.o \
 	$(OBJECT)/sys_init.o \
@@ -178,7 +187,11 @@ duos: $(OBJECT)/kmath.o \
 	$(OBJECT)/debug.o \
 	$(OBJECT)/timer.o \
 	$(OBJECT)/sys_err.o \
-	$(OBJECT)/sys_rtc.o  
+	$(OBJECT)/sys_rtc.o \
+	$(OBJECT)/syscall.o \
+	$(OBJECT)/kunistd.o \
+	$(OBJECT)/dev_table.o \
+
 	
 
 	$(CC) $(LDFLAGS) $^ -o $(TARGET)/$@
@@ -195,6 +208,7 @@ final.elf: $(OBJECT)/kmath.o \
 	$(OBJECT)/stm32_startup.o \
 	$(OBJECT)/sys_clock.o \
 	$(OBJECT)/sys_usart.o \
+	$(OBJECT)/usart.o \
 	$(OBJECT)/sys_gpio.o \
 	$(OBJECT)/kstdio.o \
 	$(OBJECT)/sys_init.o \
@@ -205,7 +219,10 @@ final.elf: $(OBJECT)/kmath.o \
 	$(OBJECT)/debug.o \
 	$(OBJECT)/timer.o \
 	$(OBJECT)/sys_err.o \
-	$(OBJECT)/sys_rtc.o 
+	$(OBJECT)/sys_rtc.o \
+	$(OBJECT)/syscall.o \
+	$(OBJECT)/kunistd.o \
+	$(OBJECT)/dev_table.o
 	
 	
 	$(CC) $(LDFLAGS) $^ -o build/$@
