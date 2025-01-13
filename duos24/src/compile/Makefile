@@ -9,6 +9,7 @@ OBJECT = object
 OS_PATH=../kern
 OS_SYS_LIB = $(OS_PATH)/arch/$(MCU)/sys_lib
 USERLAND = ../userland
+APP = $(USERLAND)/app
 DEV=$(OS_PATH)/dev
 SYSTEM_CONFIG=$(OS_PATH)/sys_config
 # System Device Prototype
@@ -21,6 +22,7 @@ INCLUDE=-I$(OS_PATH)/include \
 -I$(OS_PATH)/include/kern \
 -I$(DEV)/include \
 -I$(USERLAND)/include \
+-I$(APP)/include \
 -I$(SYSTEM_CONFIG) \
 -I$(OS_PATH)/include/sotom
 
@@ -63,6 +65,7 @@ kstdio.o \
 stm32_startup.o \
 sys_init.o \
 unistd.o \
+ustdio.o \
 times.o \
 kunistd.o \
 ktimes.o \
@@ -75,6 +78,8 @@ sys_spi.o \
 sys_err.o \
 sys_rtc.o \
 dev_table.o \
+block.o \
+app.o \
 duos \
 final.elf
 
@@ -128,6 +133,10 @@ kfloat.o: $(OS_PATH)/lib/kfloat.c
 unistd.o: $(USERLAND)/utils/unistd.c
 	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
 
+ustdio.o: $(USERLAND)/utils/ustdio.c
+	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
+
+
 kunistd.o: $(OS_PATH)/lib/kunistd.c
 	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
 
@@ -161,7 +170,13 @@ sys_err.o: $(OS_SYS_LIB)/sys_err.c
 sys_rtc.o: $(OS_SYS_LIB)/sys_rtc.c
 	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
 
-dev_table.o: $(OS_PATH)/dev/lib/dev_table.c
+dev_table.o: $(DEV)/lib/dev_table.c
+	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
+
+block.o: $(DEV)/lib/block.c
+	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
+
+app.o: $(APP)/app.c
 	$(CC) $(CFLAGS) $(INCLUDE) $^ -o $(OBJECT)/$@
 
 test_can.o: $(USERLAND)/utils/test_can.c
@@ -181,6 +196,7 @@ duos: $(OBJECT)/kmath.o \
 	$(OBJECT)/kstdio.o \
 	$(OBJECT)/sys_init.o \
 	$(OBJECT)/unistd.o \
+	$(OBJECT)/ustdio.o \
 	$(OBJECT)/times.o \
 	$(OBJECT)/serial_lin.o \
 	$(OBJECT)/UsartRingBuffer.o \
@@ -191,6 +207,8 @@ duos: $(OBJECT)/kmath.o \
 	$(OBJECT)/syscall.o \
 	$(OBJECT)/kunistd.o \
 	$(OBJECT)/dev_table.o \
+	$(OBJECT)/block.o \
+	$(OBJECT)/app.o \
 
 	
 
@@ -213,6 +231,7 @@ final.elf: $(OBJECT)/kmath.o \
 	$(OBJECT)/kstdio.o \
 	$(OBJECT)/sys_init.o \
 	$(OBJECT)/unistd.o \
+	$(OBJECT)/ustdio.o \
 	$(OBJECT)/times.o \
 	$(OBJECT)/serial_lin.o \
 	$(OBJECT)/UsartRingBuffer.o \
@@ -222,7 +241,9 @@ final.elf: $(OBJECT)/kmath.o \
 	$(OBJECT)/sys_rtc.o \
 	$(OBJECT)/syscall.o \
 	$(OBJECT)/kunistd.o \
-	$(OBJECT)/dev_table.o
+	$(OBJECT)/dev_table.o \
+	$(OBJECT)/block.o \
+	$(OBJECT)/app.o
 	
 	
 	$(CC) $(LDFLAGS) $^ -o build/$@
